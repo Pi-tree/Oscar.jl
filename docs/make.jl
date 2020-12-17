@@ -122,24 +122,28 @@ function Documenter.Documents.addpage!(doc::Document, src::AbstractString, dst::
     # page's identifier is the path relative to the `doc.user.source` directory
     name = normpath(relpath(src, doc.user.source))
     if occursin(trunc, name)
-      name = replace(name, Regex(".*$(trunc)") => trunc)
+      name = sanitize(name, trunc)
     end
     doc.blueprint.pages[name] = page
 end
 
-
+function sanitize(a::AbstractString, n::AbstractString)
+  b = splitpath(replace(a, Regex(".*$(n)") => n))
+  return joinpath(b[1], b[3:end]...)
+end
 
 bla = normpath(joinpath(dirname(pathof(Hecke)), "..", "docs", "src"))
-const hecke = replace(bla, r".*Hecke/" => "Hecke/")
+const hecke = sanitize(bla, "Hecke")
 
 bla = normpath(joinpath(dirname(pathof(Nemo)), "..", "docs", "src"))
-const nemo = replace(bla, r".*Nemo/" => "Nemo/")
+const nemo = sanitize(bla, "Nemo")
 
 bla = normpath(joinpath(dirname(pathof(AbstractAlgebra)), "..", "docs", "src"))
-const aa = replace(bla, r".*AbstractAlgebra/" => "AbstractAlgebra/")
+const aa = sanitize(bla, "AbstractAlgebra")
 
 makedocs(
-         format   = Documenter.HTML(prettyurls = !true),
+#         format   = Documenter.HTML(prettyurls = !true),
+         format   = Documenter.HTML(),
 #         format   = Markdown(),
          sitename = "Oscar.jl",
          modules = [Oscar, Hecke, Nemo, AbstractAlgebra],
