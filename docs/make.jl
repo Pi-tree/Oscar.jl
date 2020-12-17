@@ -8,7 +8,6 @@ import Documenter:
     Utilities
 
 import Documenter.Utilities: Selectors
-using DocStringExtensions
 
 using Documenter.Builder
 import Documenter.Builder: SetupBuildDirectory, walk_navpages
