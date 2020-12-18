@@ -142,8 +142,8 @@ bla = normpath(joinpath(dirname(pathof(AbstractAlgebra)), "..", "docs", "src"))
 const aa = sanitize(bla, "AbstractAlgebra")
 
 makedocs(
-#         format   = Documenter.HTML(prettyurls = !true),
-         format   = Documenter.HTML(),
+         format   = Documenter.HTML(prettyurls = !true),
+#         format   = Documenter.HTML(),
 #         format   = Markdown(),
          sitename = "Oscar.jl",
          modules = [Oscar, Hecke, Nemo, AbstractAlgebra],
@@ -225,6 +225,8 @@ deploydocs(
 #  deps = Deps.pip("pymdown-extensions", "pygments", "mkdocs", "python-markdown-math", "mkdocs-material", "mkdocs-cinder"),
    deps = nothing,
    target = "build",
+   push_preview = true,
 #  make = () -> run(`mkdocs build`),
    make = nothing
 )
+
