@@ -70,47 +70,41 @@ function __init__()
     ])
 end
 
-is_dev = false
-
-if VERSION >= v"1.4"
-  deps = Pkg.dependencies()
-  if Base.haskey(deps, Base.UUID("f1435218-dba5-11e9-1e4d-f1a5fab5fc13"))
-    ver = Pkg.dependencies()[Base.UUID("f1435218-dba5-11e9-1e4d-f1a5fab5fc13")]
-    if occursin("/dev/", ver.source)
-      global VERSION_NUMBER = VersionNumber("$(ver.version)-dev")
-      global is_dev = true
-    else
-      global VERSION_NUMBER = VersionNumber("$(ver.version)")
-      if ver.git_revision !== nothing && occursin("master", ver.git_revision)
-        is_dev = true
-      end
+# pkgdir was added in Julia 1.4
+if VERSION < v"1.4"
+    function pkgdir(m::Module)
+        rootmodule = Base.moduleroot(m)
+        path = pathof(rootmodule)
+        path === nothing && return nothing
+        return dirname(dirname(path))
     end
-  else
-    global VERSION_NUMBER = "not installed"
-  end
-else
-  deps = Pkg.API.__installed(Pkg.PKGMODE_MANIFEST) #to also get installed dependencies
-  if haskey(deps, "Oscar")
-    ver = deps["Oscar"]
-    dir = dirname(@__DIR__)
-    if occursin("/dev/", dir)
-      global VERSION_NUMBER = VersionNumber("$(ver)-dev")
-      is_dev = true
-    else
-      global VERSION_NUMBER = VersionNumber("$(ver)")
-    end
-  else
-    global VERSION_NUMBER = "not installed"
-  end
 end
+
+pkgdict(m::Module) = Pkg.TOML.parsefile(joinpath(pkgdir(m), "Project.toml"))
+pkgversion(m::Module) = pkgdict(m)["version"]
+
+const VERSION_NUMBER = pkgversion(@__MODULE__)
+
+const is_dev = (function(m)
+        if VERSION >= v"1.4"
+          uuid = Base.UUID(pkgdict(m)["uuid"])
+          deps = Pkg.dependencies()
+          if Base.haskey(deps, uuid)
+            if deps[uuid].is_tracking_path
+              return true
+            end
+          end
+        end
+        return occursin("-dev", lowercase(VERSION_NUMBER))
+    end)(@__MODULE__)
 
 const IJuliaMime = Union{MIME"text/latex", MIME"text/html"}
 
-const pkgdir = joinpath(dirname(pathof(Oscar)), "..")
+const oscardir = pkgdir(Oscar)
 
 
 function example(s::String)
-  Base.include(Main, joinpath(dirname(pathof(Oscar)), "..", "examples", s))
+  Base.include(Main, joinpath(oscardir, "examples", s))
 end
 
 # This can be used in
@@ -122,20 +116,20 @@ end
 #
 # __module__ expands to the module of the call site of the macro.
 macro example(s)
-  :($(esc(__module__)).include(joinpath(dirname(pathof(Oscar)), "..", "examples", $(esc(s)))))
+  :($(esc(__module__)).include(joinpath(oscardir, "examples", $(esc(s)))))
 end
 
 function data(s::String)
-  Base.include(Main, joinpath(dirname(pathof(Oscar)), "..", "data", s))
+  Base.include(Main, joinpath(oscardir, "data", s))
 end
 
 function revise(s::String)
-  s = joinpath(dirname(pathof(Oscar)), "..", "examples", s)
+  s = joinpath(oscardir, "examples", s)
   Main.Revise.track(Main, s)
 end
 
 function system(s::String)
-  Base.include(Main, joinpath(dirname(pathof(Oscar)), "..", "system", s))
+  Base.include(Main, joinpath(oscardir, "system", s))
 end
 
 function build()
@@ -146,9 +140,9 @@ end
 function test_module(x, new::Bool = true)
    julia_exe = Base.julia_cmd()
    if x == "all"
-     test_file = joinpath(pkgdir, "test/runtests.jl")
+     test_file = joinpath(oscardir, "test/runtests.jl")
    else
-     test_file = joinpath(pkgdir, "test/$x.jl")
+     test_file = joinpath(oscardir, "test/$x.jl")
    end
 
    if new
