@@ -64,9 +64,7 @@ export
 # _gap_group_types resp. _iso_function
 
 
-function group_element(G::T, x::GapObj) where T <: GAPGroup
-  return GAPGroupElem{T}(G, x)
-end
+group_element(G::T, x::GapObj) where T <: GAPGroup = BasicGAPGroupElem{T}(G, x)
 
 function elements(G::T) where T <: GAPGroup
   els = GAP.gap_to_julia(Vector{GapObj},GAP.Globals.Elements(G.X))
@@ -107,12 +105,14 @@ function degree(x::PermGroup)
    return x.deg
 end
 
-function order(x::Union{GAPGroupElem, GAPGroup})
-   return GAP.gap_to_julia(GAP.Globals.Order(x.X))
-end
+order(x::Union{GAPGroupElem, GAPGroup}) = order(fmpz, x)
 
-function order(::Type{T}, x::Union{GAPGroupElem, GAPGroup}) where T<:Number
-   return GAP.gap_to_julia(T, GAP.Globals.Order(x.X))
+function order(::Type{T}, x::Union{GAPGroupElem, GAPGroup}) where T
+   ord = GAP.Globals.Order(x.X)
+   if ord === GAP.Globals.infinity
+      error("order() not supported for infinite groups, use isfinite()")
+   end
+   return T(ord)
 end
 
 """
@@ -179,7 +179,7 @@ function ==(x::PermGroupElem, y::PermGroupElem)
    return x.X == y.X && degree(parent(x))==degree(parent(y))
 end
 
-function ==(x::T, y::T) where T <: GAPGroupElem
+function ==(x::T, y::T) where T <: BasicGAPGroupElem
    return x.X == y.X
 end
 

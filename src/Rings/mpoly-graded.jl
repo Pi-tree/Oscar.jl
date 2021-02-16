@@ -108,6 +108,7 @@ parent_type(::Type{MPolyElem_dec{T}}) where {T} = MPolyRing_dec{T}
 (W::MPolyRing_dec)() = MPolyElem_dec(W.R(), W)
 (W::MPolyRing_dec)(i::Int) = MPolyElem_dec(W.R(i), W)
 (W::MPolyRing_dec)(i::RingElem) = MPolyElem_dec(W.R(i), W)
+(W::MPolyRing_dec)(f::Singular.spoly) = MPolyElem_dec(W.R(f), W)
 (W::MPolyRing_dec)(f::MPolyElem) = MPolyElem_dec(f, W)
 (W::MPolyRing_dec)(g::MPolyElem_dec) = MPolyElem_dec(g.f, W)
 one(W::MPolyRing_dec) = MPolyElem_dec(one(W.R), W)
@@ -134,9 +135,68 @@ end
 
 ################################################################################
 #
+#  Binary ad hoc operations
+#
+################################################################################
+
+divexact(a::MPolyElem_dec, b::RingElem) = MPolyElem_dec(divexact(a.f, b), a.parent)
+
+divexact(a::MPolyElem_dec, b::Integer) = MPolyElem_dec(divexact(a.f, b), a.parent)
+
+divexact(a::MPolyElem_dec, b::Rational) = MPolyElem_dec(divexact(a.f, b), a.parent)
+
+for T in [:(-), :(+)]
+  @eval ($T)(a::MPolyElem_dec,
+             b::RingElem) = MPolyElem_dec($(T)(a.poly, b), a.parent)
+
+  @eval ($T)(a::MPolyElem_dec,
+             b::Integer) = MPolyElem_dec($(T)(a.poly, b), a.parent)
+
+  @eval ($T)(a::MPolyElem_dec,
+             b::Rational) = MPolyElem_dec($(T)(a.poly, b), a.parent)
+
+  @eval ($T)(a::RingElem,
+             b::MPolyElem_dec) = MPolyElem_dec($(T)(a, b.poly), b.parent)
+
+  @eval ($T)(a::Integer,
+             b::MPolyElem_dec) = MPolyElem_dec($(T)(a, b.poly), b.parent)
+
+  @eval ($T)(a::Rational,
+             b::MPolyElem_dec) = MPolyElem_dec($(T)(a, b.poly), b.parent)
+end
+
+################################################################################
+#
 #  Equality
 #
 ################################################################################
+
+function factor(x::Oscar.MPolyElem_dec)
+  R = parent(x)
+  D = Dict{elem_type(R), Int64}()
+  F = factor(x.f)
+  n=length(F.fac)
+  #if n == 1
+  #  return Fac(R(F.unit), D)
+  #else
+    for i in keys(F.fac)
+     push!(D, R(i) => Int64(F[i]))
+    end
+  return Fac(R(F.unit), D)
+  #end
+end
+
+
+function gcd(x::Oscar.MPolyElem_dec, y::Oscar.MPolyElem_dec)
+  R = parent(x)
+  return R(gcd(x.f, y.f))
+end
+
+function div(x::Oscar.MPolyElem_dec, y::Oscar.MPolyElem_dec)
+  R = parent(x)
+  return R(div(x.f, y.f))
+end
+
 
 ==(a::MPolyElem_dec, b::MPolyElem_dec) = a.f == b.f
 

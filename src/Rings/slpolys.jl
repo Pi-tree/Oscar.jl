@@ -1,6 +1,6 @@
 ## SLPolyRing (SL = straight-line)
 
-struct SLPolyRing{T<:RingElement,R<:Ring} <: MPolyRing{T}
+struct SLPolyRing{T<:RingElement,R<:Ring}  <: Ring
     base_ring::R
     S::Vector{Symbol}
 
@@ -93,7 +93,7 @@ end
 
 ## SLPoly
 
-struct SLPoly{T<:RingElement,SLPR<:SLPolyRing{T}} <: MPolyElem{T}
+struct SLPoly{T<:RingElement,SLPR<:SLPolyRing{T}} <: RingElem
     parent::SLPR
     slprogram::SLProgram{T}
 
@@ -104,6 +104,13 @@ end
 SLP.constants(p::SLPoly) = SLP.constants(p.slprogram)
 SLP.lines(p::SLPoly) = SLP.lines(p.slprogram)
 
+function Base.show(io::IO, ::MIME"text/plain", a::SLPoly)
+  print(io, AbstractAlgebra.obj_to_string(a, context = io))
+end
+
+function Base.show(io::IO, a::SLPoly)
+  print(io, AbstractAlgebra.obj_to_string(a, context = io))
+end
 
 # create invalid poly
 SLPoly(parent::SLPolyRing{T}) where {T} = SLPoly(parent, SLProgram{T}())
@@ -304,9 +311,14 @@ end
 
 ## evaluate
 
-evaluate(p::SLPoly{T}, xs::Vector{S}, conv::F=identity
-         ) where {T<:RingElement,S<:RingElement,F} =
-             SLP.evaluate(p.slprogram, xs, conv)
+function evaluate(p::SLPoly{T}, xs::Vector{S}) where {T<:RingElement,S<:RingElement,F}
+    if isempty(xs)
+        SLP.evaluate(p.slprogram, xs)
+    else
+        R = parent(one(base_ring(parent(p)))*one(parent(xs[1])))
+        R(SLP.evaluate(p.slprogram, xs, R))
+    end
+end
 
 function SLP.evaluate!(res::Vector{S}, p::SLPoly{T}, xs::Vector{S},
                        conv::F=identity

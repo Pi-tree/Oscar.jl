@@ -42,7 +42,23 @@ export Nemo, Hecke, Singular, Polymake, AbstractAlgebra, GAP
 import AbstractAlgebra: @show_name, @show_special, elem_type, force_coerce, force_op,
                         parent_type, expressify, canonical_unit
 
+# More helpful error message for users on Windows.
+windows_error() = error("""
+
+    This package unfortunately does not run natively under Windows.
+    Please install Julia using Windows subsystem for Linux and try again.
+    See also https://oscar.computeralgebra.de/install/.
+    """)
+
+if Sys.iswindows()
+  windows_error()
+end
+
 function __init__()
+  if Sys.iswindows()
+    windows_error()
+  end
+
   if isinteractive()
     println(" -----    -----    -----      -      -----   ")
     println("|     |  |     |  |     |    | |    |     |  ")
@@ -58,7 +74,7 @@ function __init__()
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
     println("Type: '?Oscar' for more information")
-    println("(c) 2019-2020 by The Oscar Development Team")
+    println("(c) 2019-2021 by The Oscar Development Team")
   end
 
   append!(_gap_group_types,
@@ -178,9 +194,11 @@ include("Rings/integer.jl")
 include("Rings/rational.jl")
 include("Rings/Hecke.jl")
 include("Rings/mpoly.jl")
+include("Rings/MPolyQuo.jl")
 include("Rings/mpoly-graded.jl")
 include("Rings/mpoly-local.jl")
 include("Rings/FinField.jl")
+include("Rings/NumberField.jl")
 
 include("Modules/FreeModules-graded.jl")
 
@@ -189,16 +207,20 @@ include("Geometry/basics.jl")
 include("Polymake/Ineq.jl")
 include("Polymake/NmbThy.jl")
 
+include("Polytopes/Polytopes.jl")
+
 include("../StraightLinePrograms/src/StraightLinePrograms.jl")
 include("Rings/lazypolys.jl")
 include("Rings/slpolys.jl")
 
+include("../experimental/Experimental.jl")
+
 if is_dev
-  include("../examples/ModStdNF.jl")
-  include("../examples/ModStdQ.jl")
-  include("../examples/ModStdQt.jl")
+#  include("../examples/ModStdNF.jl")
+#  include("../examples/ModStdQ.jl")
+#  include("../examples/ModStdQt.jl")
   include("../examples/PrimDec.jl")
-  include("../examples/GaloisGrp.jl")
+#  include("../examples/GaloisGrp.jl")
 
   include("../examples/PlaneCurve.jl")
 end
